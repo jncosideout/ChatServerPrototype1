@@ -13,7 +13,11 @@ namespace ChatServerPrototype1.ChatServer
     {
         private TcpClient handler;
         private ChatServer server;
-        private NetworkStream networkStream = null;
+        private NetworkStream networkStream = null;        
+        public NetworkStream getNetStream() 
+        {
+            return networkStream;
+        }
         private DataContractSerializer serializer = null;
         public EchoThread(ChatServer server, TcpClient handler)
         {
@@ -35,7 +39,7 @@ namespace ChatServerPrototype1.ChatServer
                     if (msg is Message valueOfMsg)
                     {
                         Console.WriteLine("Text received: {0}", valueOfMsg.TheMessage);
-                        serializeOutgoingData(valueOfMsg);
+                        echoToClients(valueOfMsg);
 
                     }
                 }
@@ -117,16 +121,31 @@ namespace ChatServerPrototype1.ChatServer
             }
             return msg;            
         }
-        private void serializeOutgoingData(Message msg)
+
+        private void echoToClients(Message msg)
+        {
+            byte[] bMessage = serializeOutgoingData(msg);
+            distributeMessageToClients(bMessage);
+        }
+
+        private byte[] serializeOutgoingData(Message msg)
         {
             using (MemoryStream memStream = new MemoryStream())
             {
                 serializer.WriteObject(memStream, msg); 
                 string xmlOutput = toXML(msg); 
                 Console.WriteLine(xmlOutput);                 
-                byte[] bMessage = memStream.ToArray();
-                networkStream.Write(bMessage, 0, bMessage.Length);
+                return memStream.ToArray();
             }       
+        }
+
+        private void distributeMessageToClients(byte[] bMessage)
+        {
+            foreach (EchoThread thatClient in server.getClients())
+            {
+                NetworkStream thatClientNetStrm = thatClient.getNetStream();
+                thatClientNetStrm.Write(bMessage, 0, bMessage.Length);
+            }
         }
 
         private string toXML(Message message)

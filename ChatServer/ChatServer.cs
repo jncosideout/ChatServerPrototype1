@@ -11,8 +11,11 @@ namespace ChatServerPrototype1.ChatServer
     {
 
         private static readonly int portNumber = 4444;
-        private List<EchoThread> echoThreads;
-
+        private List<EchoThread> clients;
+        public List<EchoThread> getClients()
+        {
+            return clients;
+        }
         public ChatServer(int portNumber)
         {
         }
@@ -26,7 +29,7 @@ namespace ChatServerPrototype1.ChatServer
 
         public void StartServer()
         {
-            echoThreads = new List<EchoThread>();
+            clients = new List<EchoThread>();
             // Get Host IP Address that is used to establish a connection  
             // In this case, we get one IP address of localhost that is IP : 127.0.0.1  
             // If a host has multiple addresses, you will get a list of addresses 
@@ -64,7 +67,7 @@ namespace ChatServerPrototype1.ChatServer
                         EchoThread echoThread = new EchoThread(this, handler);
                         Thread workThread = new Thread(new ThreadStart(echoThread.Run));
                         workThread.Start();
-                        echoThreads.Add(echoThread);
+                        clients.Add(echoThread);
                     } 
                     catch (Exception e) 
                     {

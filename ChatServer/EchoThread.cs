@@ -31,9 +31,13 @@ namespace ChatServerPrototype1.ChatServer
             {
                 if (networkStream.CanRead)
                 {
-                    Message msg = receiveIncomingData();
-                    Console.WriteLine("Text received: {0}", msg.TheMessage);
-                    serializeOutgoingData(msg);
+                    Message? msg = receiveIncomingData();
+                    if (msg is Message valueOfMsg)
+                    {
+                        Console.WriteLine("Text received: {0}", valueOfMsg.TheMessage);
+                        serializeOutgoingData(valueOfMsg);
+
+                    }
                 }
             }
 
@@ -41,9 +45,9 @@ namespace ChatServerPrototype1.ChatServer
             handler.Close();
         }
 
-        private Message receiveIncomingData()
+        private Message? receiveIncomingData()
         {
-            Message newMessage = null;
+            Message? newMessage = null;
             var memStream = new MemoryStream();
             try {
                 readBytesInto(ref memStream);
@@ -80,9 +84,9 @@ namespace ChatServerPrototype1.ChatServer
             } 
             while (networkStream.DataAvailable);
         }
-        private Message deserializeFromFirstXMLelement(ref MemoryStream memStream)
+        private Message? deserializeFromFirstXMLelement(ref MemoryStream memStream)
         {
-            Message msg = null;
+            Message? msg = null;
             byte[] bMessage = memStream.ToArray();
 
             XmlDictionaryReader xmlDictReader = XmlDictionaryReader.CreateTextReader(bMessage, 0, bMessage.Length, new XmlDictionaryReaderQuotas());
@@ -94,9 +98,20 @@ namespace ChatServerPrototype1.ChatServer
                         if (serializer.IsStartObject(xmlDictReader))
                         {
                             Console.WriteLine("Found start element");
-                            msg = (Message)serializer.ReadObject(xmlDictReader);
+                            try
+                            {
+                                msg = (Message)serializer.ReadObject(xmlDictReader);
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine("Problem deserializing Message from client \n");
+                                Console.WriteLine(e.ToString());
+                                Console.WriteLine("Exception message:\n{0}",e.Message);
+                                Console.WriteLine("Stack trace:\n{0}", e.StackTrace); 
+                                break;                               
+                            }
                         }
-                        Console.WriteLine(xmlDictReader.Name);
+                        Console.WriteLine("Message deserialized successfully");
                         break;
                 }
             }
